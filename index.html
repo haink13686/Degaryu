@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digaryu Traditional Medicine Clinic - Queue System (Cloud)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Pyidaungsu:wght@400;700&display=swap');
+        body {
+            font-family: 'Pyidaungsu', sans-serif;
+            background-color: #f0f7f4;
+        }
+        .tab-active { color: white; background-color: #047857; border-radius: 0.75rem; }
+        .loading-overlay {
+            position: fixed; inset: 0; background: rgba(255, 255, 255, 0.9);
+            display: flex; align-items: center; justify-content: center; z-index: 1000;
+        }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <div id="loadingScreen" class="loading-overlay">
+        <div class="text-center">
+            <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-emerald-700 mx-auto mb-4"></div>
+            <p class="text-emerald-800 font-bold">Cloud စနစ်သို့ ချိတ်ဆက်နေသည်...</p>
+        </div>
+    </div>
+
+    <!-- Navigation Header -->
+    <nav class="bg-white shadow-md sticky top-0 z-50">
+        <div class="container mx-auto px-4 flex h-16 items-center justify-between">
+            <div class="flex items-center gap-2 font-bold text-emerald-700">
+                <i class="fas fa-clinic-medical text-xl"></i>
+                <span class="hidden sm:inline">ဒိဂါယု</span>
+            </div>
+            <div class="flex gap-2 p-1 bg-slate-100 rounded-xl">
+                <button onclick="switchTab('booking')" id="btn-booking" class="px-6 py-2 text-sm font-bold tab-active">လူနာ Booking</button>
+                <button onclick="switchTab('admin')" id="btn-admin" class="px-6 py-2 text-sm font-bold text-slate-500">Admin Panel</button>
+            </div>
+        </div>
+    </nav>
+
+    <header class="bg-emerald-700 text-white p-6 md:p-10 shadow-lg text-center">
+        <h1 id="displayClinicName" class="text-2xl md:text-4xl font-bold mb-2">Digaryu Traditional Medicine Clinic</h1>
+        <p class="text-emerald-100 opacity-80 text-sm">Universal Cloud Sync System</p>
+    </header>
+
+    <main class="container mx-auto p-4 md:p-8 -mt-8">
+        
+        <!-- SECTION 1: PATIENT BOOKING -->
+        <section id="view-booking" class="max-w-xl mx-auto space-y-6">
+            <div id="booking-form-container" class="bg-white p-8 rounded-[2rem] shadow-2xl border border-emerald-50">
+                <div class="text-center mb-8">
+                    <div class="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-calendar-check text-4xl"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-slate-700">ဘိုကင်ရယူရန်</h2>
+                </div>
+                
+                <form id="regForm" class="space-y-5">
+                    <div class="relative">
+                        <i class="fas fa-user absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500"></i>
+                        <input type="text" id="patientName" required class="w-full pl-12 pr-4 py-4 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-emerald-500 focus:bg-white outline-none transition-all" placeholder="လူနာအမည်">
+                    </div>
+                    <div class="relative">
+                        <i class="fas fa-phone absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500"></i>
+                        <input type="tel" id="patientPhone" class="w-full pl-12 pr-4 py-4 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-emerald-500 focus:bg-white outline-none transition-all" placeholder="ဖုန်းနံပါတ်">
+                    </div>
+                    <div class="relative">
+                        <i class="fas fa-calendar-day absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500"></i>
+                        <input type="date" id="bookingDate" required class="w-full pl-12 pr-4 py-4 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-emerald-500 focus:bg-white outline-none transition-all">
+                        <p class="text-[10px] text-slate-400 mt-1 ml-2">* ယနေ့မှစ၍ တစ်ပတ်အတွင်းသာ ယူနိုင်ပါသည်</p>
+                    </div>
+                    <button type="submit" id="submitBtn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl font-bold text-lg shadow-lg transition-all active:scale-95">
+                        စာရင်းသွင်းမည်
+                    </button>
+                </form>
+            </div>
+
+            <div id="ticket-view" class="hidden">
+                <div class="bg-slate-900 text-white p-10 rounded-[2.5rem] text-center shadow-2xl relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-full h-2 bg-emerald-500"></div>
+                    <p class="text-emerald-400 text-xs font-bold uppercase mb-6 tracking-widest">Booking အောင်မြင်ပါသည်</p>
+                    <h3 id="ticketNo" class="text-8xl font-black mb-4">#00</h3>
+                    <p id="ticketInfo" class="text-emerald-300 font-bold mb-8"></p>
+                    <button onclick="resetBookingForm()" class="bg-emerald-600 w-full py-4 rounded-xl font-bold">နောက်ထပ် ဘိုကင်ယူရန်</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 2: ADMIN PANEL -->
+        <section id="view-admin" class="hidden space-y-6">
+            <div id="admin-auth" class="bg-white p-8 rounded-3xl shadow-xl max-w-sm mx-auto text-center border">
+                <h2 class="font-bold text-xl mb-6">Admin Login</h2>
+                <input type="password" id="adminKey" class="w-full p-4 bg-slate-50 rounded-2xl mb-4 text-center outline-none border-2 border-transparent focus:border-emerald-500" placeholder="စကားဝှက်">
+                <button onclick="loginAdmin()" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold">ဝင်ရောက်မည်</button>
+            </div>
+
+            <div id="admin-content" class="hidden space-y-6">
+                <div class="flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm border">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-slate-400 uppercase">စာရင်းကြည့်ရန်ရက်:</span>
+                        <input type="date" id="filterDate" class="bg-emerald-50 px-4 py-2 rounded-xl outline-none font-bold text-emerald-800">
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="toggleSettingsModal(true)" class="bg-slate-100 p-3 rounded-xl text-slate-600"><i class="fas fa-cog"></i></button>
+                        <button onclick="logoutAdmin()" class="bg-red-50 p-3 rounded-xl text-red-600"><i class="fas fa-sign-out-alt"></i></button>
+                    </div>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-blue-500">
+                        <p class="text-gray-400 text-xs font-bold uppercase">စုစုပေါင်း</p>
+                        <h4 id="statTotal" class="text-3xl font-bold">0</h4>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-amber-500">
+                        <p class="text-gray-400 text-xs font-bold uppercase">စောင့်ဆိုင်း</p>
+                        <h4 id="statWait" class="text-3xl font-bold text-amber-600">0</h4>
+                    </div>
+                    <div class="bg-emerald-600 p-6 rounded-2xl shadow-xl text-white">
+                        <p class="text-emerald-200 text-xs font-bold uppercase">ခေါ်ဆိုဆဲ</p>
+                        <h4 id="statCall" class="text-3xl font-bold">#--</h4>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-slate-300">
+                        <p class="text-gray-400 text-xs font-bold uppercase">ပြီးစီး</p>
+                        <h4 id="statDone" class="text-3xl font-bold">0</h4>
+                    </div>
+                </div>
+
+                <!-- Patient List Table -->
+                <div class="bg-white rounded-[2rem] shadow-sm border overflow-hidden">
+                    <div class="p-6 border-b border-slate-50 flex justify-between items-center">
+                        <h3 class="font-bold text-lg">လူနာစာရင်း</h3>
+                        <span id="currentFilterLabel" class="text-xs bg-slate-100 px-3 py-1 rounded-full font-bold text-slate-500"></span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="bg-slate-50 text-slate-400 text-xs font-bold uppercase">
+                                <tr>
+                                    <th class="p-6">Queue</th>
+                                    <th class="p-6">အမည်</th>
+                                    <th class="p-6">ဖုန်း</th>
+                                    <th class="p-6 text-right">လုပ်ဆောင်ချက်</th>
+                                </tr>
+                            </thead>
+                            <tbody id="patientTable" class="divide-y divide-slate-100">
+                                <!-- Data will be injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="emptyMsg" class="p-20 text-center text-slate-300 hidden">
+                        <i class="fas fa-folder-open text-4xl mb-4 block"></i>
+                        ဒေတာမရှိသေးပါ။
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[150] flex items-center justify-center p-4 hidden">
+        <div class="bg-white w-full max-w-md rounded-[2.5rem] p-8">
+            <h3 class="font-bold text-xl mb-6">ဆေးခန်းအမည် ပြင်ဆင်ရန်</h3>
+            <input type="text" id="inputClinicName" class="w-full p-4 bg-slate-100 rounded-2xl mb-6 outline-none border-2 border-transparent focus:border-emerald-500">
+            <button onclick="saveClinicSettings()" id="btnSaveSettings" class="w-full bg-emerald-600 text-white py-4 rounded-2xl font-bold">သိမ်းဆည်းမည်</button>
+            <button onclick="toggleSettingsModal(false)" class="w-full mt-2 text-slate-400 text-sm">ပယ်ဖျက်မည်</button>
+        </div>
+    </div>
+
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white px-6 py-3 rounded-xl shadow-2xl opacity-0 transition-all z-[200] pointer-events-none font-bold"></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Initialization
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'clinic-v1';
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let user = null;
+        let allPatients = [];
+
+        // STARTUP LOGIC
+        async function init() {
+            const initAuth = async () => {
+                try {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                } catch (e) {
+                    console.error("Auth failed:", e);
+                    showToast("Cloud Connection Failed", true);
+                }
+            };
+            
+            await initAuth();
+
+            onAuthStateChanged(auth, (u) => {
+                user = u;
+                if (user) {
+                    document.getElementById('loadingScreen').classList.add('hidden');
+                    setupDateRestrictions();
+                    setupSync();
+                    if(sessionStorage.getItem('isAdmin') === 'true') loginAdmin();
+                }
+            });
+        }
+
+        function setupDateRestrictions() {
+            const bookingDateInput = document.getElementById('bookingDate');
+            const today = new Date();
+            const todayStr = today.toISOString().split('T')[0];
+            
+            const nextWeek = new Date();
+            nextWeek.setDate(today.getDate() + 7);
+            const maxDateStr = nextWeek.toISOString().split('T')[0];
+
+            // Set min to today and max to 7 days from now
+            bookingDateInput.min = todayStr;
+            bookingDateInput.max = maxDateStr;
+            
+            // Default selected date is today
+            if (!bookingDateInput.value) {
+                bookingDateInput.value = todayStr;
+            }
+
+            // Admin Filter Default to Today as well
+            const filterInput = document.getElementById('filterDate');
+            if (!filterInput.value) {
+                filterInput.value = todayStr; 
+            }
+            filterInput.onchange = () => render();
+        }
+
+        function setupSync() {
+            if (!user) return;
+            const patientsRef = collection(db, 'artifacts', appId, 'public', 'data', 'patients');
+            onSnapshot(patientsRef, (snap) => {
+                allPatients = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                render();
+            }, (err) => {
+                console.error("Firestore Listen Error (Patients):", err);
+                showToast("Data ဆွဲထုတ်ရာတွင် အမှားရှိပါသည်", true);
+            });
+
+            const settingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'clinicInfo');
+            onSnapshot(settingsRef, (snap) => {
+                if (snap.exists()) {
+                    const name = snap.data().name || "Digaryu Traditional Medicine Clinic";
+                    document.getElementById('displayClinicName').innerText = name;
+                    document.getElementById('inputClinicName').value = name;
+                }
+            }, (err) => console.error("Firestore Listen Error (Settings):", err));
+        }
+
+        window.switchTab = (tab) => {
+            document.getElementById('view-booking').classList.toggle('hidden', tab !== 'booking');
+            document.getElementById('view-admin').classList.toggle('hidden', tab !== 'admin');
+            document.getElementById('btn-booking').classList.toggle('tab-active', tab === 'booking');
+            document.getElementById('btn-admin').classList.toggle('tab-active', tab === 'admin');
+            if (tab === 'admin') render();
+        };
+
+        document.getElementById('regForm').onsubmit = async (e) => {
+            e.preventDefault();
+            if (!user) {
+                showToast("ချိတ်ဆက်မှု မအောင်မြင်သေးပါ။ ခဏစောင့်ပါ", true);
+                return;
+            }
+
+            const name = document.getElementById('patientName').value.trim();
+            const phone = document.getElementById('patientPhone').value.trim();
+            const date = document.getElementById('bookingDate').value;
+            
+            // Calculate Queue No for that specific date
+            const dateList = allPatients.filter(p => p.date === date);
+            const qNo = dateList.length + 1;
+
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.innerText = "သိမ်းဆည်းနေသည်...";
+
+            try {
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'patients'), {
+                    name, 
+                    phone: phone || '-', 
+                    date, 
+                    queueNo: qNo, 
+                    status: 'waiting', 
+                    timestamp: Date.now()
+                });
+
+                document.getElementById('ticketNo').innerText = "#" + String(qNo).padStart(2, '0');
+                document.getElementById('ticketInfo').innerText = `${name} | ${date}`;
+                document.getElementById('booking-form-container').classList.add('hidden');
+                document.getElementById('ticket-view').classList.remove('hidden');
+                showToast("Booking တင်ခြင်း အောင်မြင်ပါသည်");
+            } catch (err) { 
+                console.error("Booking Write Error:", err);
+                showToast("Cloud မှာ သိမ်းဆည်းမရပါ။", true); 
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "စာရင်းသွင်းမည်";
+            }
+        };
+
+        window.render = () => {
+            const filterDate = document.getElementById('filterDate').value;
+            document.getElementById('currentFilterLabel').innerText = filterDate;
+
+            // Filter by date and sort by Queue Number
+            const list = allPatients.filter(p => p.date === filterDate).sort((a,b) => a.queueNo - b.queueNo);
+            const calling = list.find(p => p.status === 'calling');
+
+            document.getElementById('statTotal').innerText = list.length;
+            document.getElementById('statWait').innerText = list.filter(p => p.status === 'waiting').length;
+            document.getElementById('statCall').innerText = calling ? "#" + String(calling.queueNo).padStart(2, '0') : "#--";
+            document.getElementById('statDone').innerText = list.filter(p => p.status === 'done').length;
+
+            const table = document.getElementById('patientTable');
+            if (list.length === 0) {
+                table.innerHTML = "";
+                document.getElementById('emptyMsg').classList.remove('hidden');
+                return;
+            }
+
+            document.getElementById('emptyMsg').classList.add('hidden');
+            table.innerHTML = list.map(p => `
+                <tr class="transition-all duration-300 hover:bg-slate-50 ${p.status === 'calling' ? 'bg-emerald-50 border-l-4 border-emerald-500' : ''}">
+                    <td class="p-6 font-bold text-2xl text-emerald-600">#${String(p.queueNo).padStart(2, '0')}</td>
+                    <td class="p-6">
+                        <div class="font-bold text-slate-700">${p.name}</div>
+                        <div class="text-[10px] ${p.status === 'done' ? 'text-blue-500' : p.status === 'calling' ? 'text-emerald-500' : 'text-slate-400'} font-bold uppercase tracking-tighter">${p.status}</div>
+                    </td>
+                    <td class="p-6 text-slate-500 font-mono text-sm">${p.phone}</td>
+                    <td class="p-6 text-right space-x-2">
+                        ${p.status === 'waiting' ? `
+                            <button onclick="updateStatus('${p.id}', 'calling')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm transition-transform active:scale-95">
+                                <i class="fas fa-bullhorn mr-1"></i> Call
+                            </button>
+                        ` : ''}
+                        ${p.status === 'calling' ? `
+                            <button onclick="updateStatus('${p.id}', 'done')" class="bg-slate-900 hover:bg-black text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm transition-transform active:scale-95">
+                                <i class="fas fa-check mr-1"></i> Finish
+                            </button>
+                        ` : ''}
+                        <button onclick="deletePatient('${p.id}')" class="text-slate-200 hover:text-red-500 p-2 transition-colors">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        };
+
+        window.updateStatus = async (id, status) => {
+            if (!user) return;
+            try {
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'patients', id), { status });
+                showToast(status === 'calling' ? "လူနာကို ခေါ်ဆိုနေပါသည်" : "ကုသမှု ပြီးဆုံးပါပြီ");
+            } catch (err) { 
+                console.error("Update Status Error:", err);
+                showToast("Update လုပ်ဆောင်၍မရပါ", true);
+            }
+        };
+
+        window.deletePatient = async (id) => {
+            if(confirm("ဤလူနာစာရင်းကို အပြီးအပိုင် ဖျက်မည်မှာ သေချာပါသလား?")) {
+                try {
+                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'patients', id));
+                    showToast("ဖျက်ပြီးပါပြီ");
+                } catch (err) { 
+                    console.error("Delete Patient Error:", err);
+                    showToast("ဖျက်၍မရပါ", true);
+                }
+            }
+        };
+
+        window.loginAdmin = () => {
+            const input = document.getElementById('adminKey');
+            const pass = input.value;
+            if (pass === "123" || sessionStorage.getItem('isAdmin') === 'true') {
+                sessionStorage.setItem('isAdmin', 'true');
+                document.getElementById('admin-auth').classList.add('hidden');
+                document.getElementById('admin-content').classList.remove('hidden');
+                render();
+            } else {
+                showToast("စကားဝှက်မှားနေပါသည်", true);
+                input.value = "";
+            }
+        };
+
+        window.logoutAdmin = () => {
+            sessionStorage.removeItem('isAdmin');
+            location.reload();
+        };
+
+        window.saveClinicSettings = async () => {
+            const name = document.getElementById('inputClinicName').value.trim();
+            if (!name || !user) return;
+            try {
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'clinicInfo'), { name }, { merge: true });
+                toggleSettingsModal(false);
+                showToast("ဆေးခန်းအမည် ပြင်ဆင်ပြီးပါပြီ");
+            } catch (err) { 
+                showToast("သိမ်းဆည်းမရပါ", true); 
+            }
+        };
+
+        window.toggleSettingsModal = (show) => document.getElementById('settingsModal').classList.toggle('hidden', !show);
+        
+        window.resetBookingForm = () => {
+            document.getElementById('regForm').reset();
+            document.getElementById('booking-form-container').classList.remove('hidden');
+            document.getElementById('ticket-view').classList.add('hidden');
+            setupDateRestrictions();
+        };
+
+        function showToast(m, isError = false) {
+            const t = document.getElementById('toast');
+            t.innerText = m;
+            t.style.backgroundColor = isError ? "#dc2626" : "#0f172a";
+            t.classList.replace('opacity-0', 'opacity-100');
+            t.classList.add('translate-y-[-10px]');
+            setTimeout(() => {
+                t.classList.replace('opacity-100', 'opacity-0');
+                t.classList.remove('translate-y-[-10px]');
+            }, 3000);
+        }
+
+        init();
+    </script>
+</body>
+</html>
