@@ -174,9 +174,9 @@ const firebaseConfig ={
   measurementId: "G-S7C3Q3EFQ2"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const storage = firebase.storage();
 
 /* ========= UI ========= */
 function openTab(tab){
