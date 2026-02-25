@@ -173,7 +173,9 @@
 
     <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white px-6 py-3 rounded-xl shadow-2xl opacity-0 transition-all z-[200] pointer-events-none font-bold"></div>
 <script type="module">
-  <script type="module">
+ <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white px-6 py-3 rounded-xl shadow-2xl opacity-0 transition-all z-[200] pointer-events-none font-bold"></div>
+
+<script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
   import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
@@ -186,19 +188,30 @@
     appId: "1:720213822996:web:1161f95fec68632a21801"
   };
 
-  try {
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    console.log("Firebase ချိတ်ဆက်မှု အောင်မြင်ပါပြီ!");
+  let app;
+  let db;
 
-    // loading ပျောက်အောင်
+  try {
+    app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
+    console.log("Firebase connected successfully!");
+
+    // Loading ရှိရင် ပျောက်အောင်လုပ်ပါ (class မှားရင် ဒီနေရာ ကနေ error မထွက်အောင် စစ်ထားတယ်)
     const loading = document.querySelector('.loading');
-    if (loading) loading.style.display = 'none';
+    if (loading) {
+      loading.style.display = 'none';
+    } else {
+      console.log("No .loading element found - skipping hide");
+    }
 
   } catch (error) {
-    console.error("Firebase ချိတ်ဆက်မှု မအောင်မြင်ပါ:", error);
+    console.error("Firebase connection failed:", error);
+    const loading = document.querySelector('.loading');
+    if (loading) {
+      loading.innerHTML = "Cloud ချိတ်ဆက်မရပါ။ နောက်မှ ထပ်ကြည့်ပါ။";
+    }
   }
-</script>
+  // }
 
 </script>
 </body>
