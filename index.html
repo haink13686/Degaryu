@@ -173,43 +173,32 @@
 
     <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white px-6 py-3 rounded-xl shadow-2xl opacity-0 transition-all z-[200] pointer-events-none font-bold"></div>
 <script type="module">
-  // Firebase SDK တွေ ထည့်ပါ (latest version သုံးပါ)
+  <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
   import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-  // လိုအပ်ရင် auth ပါ ထည့်ပါ
-  // import { getAuth } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-  // မင်း Firebase Console က ယူလာတဲ့ config ကို တိုက်ရိုက် ထည့်ပါ
   const firebaseConfig = {
-    apiKey: "AIzaSyCv7Ur--zmS4r49BELdxw9YAoVsrDOdsI",  // မင်း apiKey
+    apiKey: "AIzaSyCv7Ur--zmS4r49BELdxw9YAoVsrDOdsI",
     authDomain: "digaryu-29662.firebaseapp.com",
     projectId: "digaryu-29662",
     storageBucket: "digaryu-29662.appspot.com",
     messagingSenderId: "720213822996",
-    appId: "1:720213822996:web:1161f95fec68632a21801",
-    measurementId: "G-S7CQ3EFQ2"   // ရှိရင် ထည့်ပါ၊ မရှိရင် ဖယ်လို့ ရတယ်
+    appId: "1:720213822996:web:1161f95fec68632a21801"
   };
 
-  let app, db;
-
   try {
-    app = initializeApp(firebaseConfig);
-    db = getFirestore(app);
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
     console.log("Firebase ချိတ်ဆက်မှု အောင်မြင်ပါပြီ!");
 
-    // loading ပျောက်အောင် လုပ်ပါ
-    const loadingElement = document.querySelector('.loading'); // မင်း loading div ရဲ့ class နဲ့ ပြောင်းပါ
-    if (loadingElement) {
-      loadingElement.style.display = 'none';
-    }
+    // loading ပျောက်အောင်
+    const loading = document.querySelector('.loading');
+    if (loading) loading.style.display = 'none';
 
   } catch (error) {
     console.error("Firebase ချိတ်ဆက်မှု မအောင်မြင်ပါ:", error);
-    const loadingElement = document.querySelector('.loading');
-    if (loadingElement) {
-      loadingElement.innerHTML = "Cloud ချိတ်ဆက်မရပါ။ နောက်မှ ထပ်ကြည့်ပါ။";
-    }
   }
+</script>
 
 </script>
 </body>
