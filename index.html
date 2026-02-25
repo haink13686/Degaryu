@@ -175,16 +175,19 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+  import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+  import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Initialization
-        const firebaseConfig = JSON.parse(__firebase_config);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'clinic-v1';
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
+       {
+    apiKey: "AIzaSyCv7Ur--zmS24r49BELdxw9YAoVsrDOdsI",
+    authDomain: "digaryu-29662.firebaseapp.com",
+    databaseURL: "https://digaryu-29662-default-rtdb.firebaseio.com",
+    projectId: "digaryu-29662",
+    storageBucket: "digaryu-29662.firebasestorage.app",
+    messagingSenderId: "720213822996",
+    appId: "1:720213822996:web:1161f95fec068632aa2101",
+  measurementId: "G-S7C3Q3EFQ2"
         let user = null;
         let allPatients = [];
 
