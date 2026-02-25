@@ -172,275 +172,45 @@
     </div>
 
     <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white px-6 py-3 rounded-xl shadow-2xl opacity-0 transition-all z-[200] pointer-events-none font-bold"></div>
+<script type="module">
+  // Firebase SDK တွေ ထည့်ပါ (latest version သုံးပါ)
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+  import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+  // လိုအပ်ရင် auth ပါ ထည့်ပါ
+  // import { getAuth } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-  import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-  import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // Initialization
-       {
-    apiKey: "AIzaSyCv7Ur--zmS24r49BELdxw9YAoVsrDOdsI",
+  // မင်း Firebase Console က ယူလာတဲ့ config ကို တိုက်ရိုက် ထည့်ပါ
+  const firebaseConfig = {
+    apiKey: "AIzaSyCv7Ur--zmS4r49BELdxw9YAoVsrDOdsI",  // မင်း apiKey
     authDomain: "digaryu-29662.firebaseapp.com",
-    databaseURL: "https://digaryu-29662-default-rtdb.firebaseio.com",
     projectId: "digaryu-29662",
-    storageBucket: "digaryu-29662.firebasestorage.app",
+    storageBucket: "digaryu-29662.appspot.com",
     messagingSenderId: "720213822996",
-    appId: "1:720213822996:web:1161f95fec068632aa2101",
-  measurementId: "G-S7C3Q3EFQ2"
-        let user = null;
-        let allPatients = [];
+    appId: "1:720213822996:web:1161f95fec68632a21801",
+    measurementId: "G-S7CQ3EFQ2"   // ရှိရင် ထည့်ပါ၊ မရှိရင် ဖယ်လို့ ရတယ်
+  };
 
-        // STARTUP LOGIC
-        async function init() {
-            const initAuth = async () => {
-                try {
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        await signInWithCustomToken(auth, __initial_auth_token);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
-                } catch (e) {
-                    console.error("Auth failed:", e);
-                    showToast("Cloud Connection Failed", true);
-                }
-            };
-            
-            await initAuth();
+  let app, db;
 
-            onAuthStateChanged(auth, (u) => {
-                user = u;
-                if (user) {
-                    document.getElementById('loadingScreen').classList.add('hidden');
-                    setupDateRestrictions();
-                    setupSync();
-                    if(sessionStorage.getItem('isAdmin') === 'true') loginAdmin();
-                }
-            });
-        }
+  try {
+    app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
+    console.log("Firebase ချိတ်ဆက်မှု အောင်မြင်ပါပြီ!");
 
-        function setupDateRestrictions() {
-            const bookingDateInput = document.getElementById('bookingDate');
-            const today = new Date();
-            const todayStr = today.toISOString().split('T')[0];
-            
-            const nextWeek = new Date();
-            nextWeek.setDate(today.getDate() + 7);
-            const maxDateStr = nextWeek.toISOString().split('T')[0];
+    // loading ပျောက်အောင် လုပ်ပါ
+    const loadingElement = document.querySelector('.loading'); // မင်း loading div ရဲ့ class နဲ့ ပြောင်းပါ
+    if (loadingElement) {
+      loadingElement.style.display = 'none';
+    }
 
-            // Set min to today and max to 7 days from now
-            bookingDateInput.min = todayStr;
-            bookingDateInput.max = maxDateStr;
-            
-            // Default selected date is today
-            if (!bookingDateInput.value) {
-                bookingDateInput.value = todayStr;
-            }
+  } catch (error) {
+    console.error("Firebase ချိတ်ဆက်မှု မအောင်မြင်ပါ:", error);
+    const loadingElement = document.querySelector('.loading');
+    if (loadingElement) {
+      loadingElement.innerHTML = "Cloud ချိတ်ဆက်မရပါ။ နောက်မှ ထပ်ကြည့်ပါ။";
+    }
+  }
 
-            // Admin Filter Default to Today as well
-            const filterInput = document.getElementById('filterDate');
-            if (!filterInput.value) {
-                filterInput.value = todayStr; 
-            }
-            filterInput.onchange = () => render();
-        }
-
-        function setupSync() {
-            if (!user) return;
-            const patientsRef = collection(db, 'artifacts', appId, 'public', 'data', 'patients');
-            onSnapshot(patientsRef, (snap) => {
-                allPatients = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                render();
-            }, (err) => {
-                console.error("Firestore Listen Error (Patients):", err);
-                showToast("Data ဆွဲထုတ်ရာတွင် အမှားရှိပါသည်", true);
-            });
-
-            const settingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'clinicInfo');
-            onSnapshot(settingsRef, (snap) => {
-                if (snap.exists()) {
-                    const name = snap.data().name || "Digaryu Traditional Medicine Clinic";
-                    document.getElementById('displayClinicName').innerText = name;
-                    document.getElementById('inputClinicName').value = name;
-                }
-            }, (err) => console.error("Firestore Listen Error (Settings):", err));
-        }
-
-        window.switchTab = (tab) => {
-            document.getElementById('view-booking').classList.toggle('hidden', tab !== 'booking');
-            document.getElementById('view-admin').classList.toggle('hidden', tab !== 'admin');
-            document.getElementById('btn-booking').classList.toggle('tab-active', tab === 'booking');
-            document.getElementById('btn-admin').classList.toggle('tab-active', tab === 'admin');
-            if (tab === 'admin') render();
-        };
-
-        document.getElementById('regForm').onsubmit = async (e) => {
-            e.preventDefault();
-            if (!user) {
-                showToast("ချိတ်ဆက်မှု မအောင်မြင်သေးပါ။ ခဏစောင့်ပါ", true);
-                return;
-            }
-
-            const name = document.getElementById('patientName').value.trim();
-            const phone = document.getElementById('patientPhone').value.trim();
-            const date = document.getElementById('bookingDate').value;
-            
-            // Calculate Queue No for that specific date
-            const dateList = allPatients.filter(p => p.date === date);
-            const qNo = dateList.length + 1;
-
-            const btn = document.getElementById('submitBtn');
-            btn.disabled = true;
-            btn.innerText = "သိမ်းဆည်းနေသည်...";
-
-            try {
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'patients'), {
-                    name, 
-                    phone: phone || '-', 
-                    date, 
-                    queueNo: qNo, 
-                    status: 'waiting', 
-                    timestamp: Date.now()
-                });
-
-                document.getElementById('ticketNo').innerText = "#" + String(qNo).padStart(2, '0');
-                document.getElementById('ticketInfo').innerText = `${name} | ${date}`;
-                document.getElementById('booking-form-container').classList.add('hidden');
-                document.getElementById('ticket-view').classList.remove('hidden');
-                showToast("Booking တင်ခြင်း အောင်မြင်ပါသည်");
-            } catch (err) { 
-                console.error("Booking Write Error:", err);
-                showToast("Cloud မှာ သိမ်းဆည်းမရပါ။", true); 
-            } finally {
-                btn.disabled = false;
-                btn.innerText = "စာရင်းသွင်းမည်";
-            }
-        };
-
-        window.render = () => {
-            const filterDate = document.getElementById('filterDate').value;
-            document.getElementById('currentFilterLabel').innerText = filterDate;
-
-            // Filter by date and sort by Queue Number
-            const list = allPatients.filter(p => p.date === filterDate).sort((a,b) => a.queueNo - b.queueNo);
-            const calling = list.find(p => p.status === 'calling');
-
-            document.getElementById('statTotal').innerText = list.length;
-            document.getElementById('statWait').innerText = list.filter(p => p.status === 'waiting').length;
-            document.getElementById('statCall').innerText = calling ? "#" + String(calling.queueNo).padStart(2, '0') : "#--";
-            document.getElementById('statDone').innerText = list.filter(p => p.status === 'done').length;
-
-            const table = document.getElementById('patientTable');
-            if (list.length === 0) {
-                table.innerHTML = "";
-                document.getElementById('emptyMsg').classList.remove('hidden');
-                return;
-            }
-
-            document.getElementById('emptyMsg').classList.add('hidden');
-            table.innerHTML = list.map(p => `
-                <tr class="transition-all duration-300 hover:bg-slate-50 ${p.status === 'calling' ? 'bg-emerald-50 border-l-4 border-emerald-500' : ''}">
-                    <td class="p-6 font-bold text-2xl text-emerald-600">#${String(p.queueNo).padStart(2, '0')}</td>
-                    <td class="p-6">
-                        <div class="font-bold text-slate-700">${p.name}</div>
-                        <div class="text-[10px] ${p.status === 'done' ? 'text-blue-500' : p.status === 'calling' ? 'text-emerald-500' : 'text-slate-400'} font-bold uppercase tracking-tighter">${p.status}</div>
-                    </td>
-                    <td class="p-6 text-slate-500 font-mono text-sm">${p.phone}</td>
-                    <td class="p-6 text-right space-x-2">
-                        ${p.status === 'waiting' ? `
-                            <button onclick="updateStatus('${p.id}', 'calling')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm transition-transform active:scale-95">
-                                <i class="fas fa-bullhorn mr-1"></i> Call
-                            </button>
-                        ` : ''}
-                        ${p.status === 'calling' ? `
-                            <button onclick="updateStatus('${p.id}', 'done')" class="bg-slate-900 hover:bg-black text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm transition-transform active:scale-95">
-                                <i class="fas fa-check mr-1"></i> Finish
-                            </button>
-                        ` : ''}
-                        <button onclick="deletePatient('${p.id}')" class="text-slate-200 hover:text-red-500 p-2 transition-colors">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
-        };
-
-        window.updateStatus = async (id, status) => {
-            if (!user) return;
-            try {
-                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'patients', id), { status });
-                showToast(status === 'calling' ? "လူနာကို ခေါ်ဆိုနေပါသည်" : "ကုသမှု ပြီးဆုံးပါပြီ");
-            } catch (err) { 
-                console.error("Update Status Error:", err);
-                showToast("Update လုပ်ဆောင်၍မရပါ", true);
-            }
-        };
-
-        window.deletePatient = async (id) => {
-            if(confirm("ဤလူနာစာရင်းကို အပြီးအပိုင် ဖျက်မည်မှာ သေချာပါသလား?")) {
-                try {
-                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'patients', id));
-                    showToast("ဖျက်ပြီးပါပြီ");
-                } catch (err) { 
-                    console.error("Delete Patient Error:", err);
-                    showToast("ဖျက်၍မရပါ", true);
-                }
-            }
-        };
-
-        window.loginAdmin = () => {
-            const input = document.getElementById('adminKey');
-            const pass = input.value;
-            if (pass === "123" || sessionStorage.getItem('isAdmin') === 'true') {
-                sessionStorage.setItem('isAdmin', 'true');
-                document.getElementById('admin-auth').classList.add('hidden');
-                document.getElementById('admin-content').classList.remove('hidden');
-                render();
-            } else {
-                showToast("စကားဝှက်မှားနေပါသည်", true);
-                input.value = "";
-            }
-        };
-
-        window.logoutAdmin = () => {
-            sessionStorage.removeItem('isAdmin');
-            location.reload();
-        };
-
-        window.saveClinicSettings = async () => {
-            const name = document.getElementById('inputClinicName').value.trim();
-            if (!name || !user) return;
-            try {
-                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'clinicInfo'), { name }, { merge: true });
-                toggleSettingsModal(false);
-                showToast("ဆေးခန်းအမည် ပြင်ဆင်ပြီးပါပြီ");
-            } catch (err) { 
-                showToast("သိမ်းဆည်းမရပါ", true); 
-            }
-        };
-
-        window.toggleSettingsModal = (show) => document.getElementById('settingsModal').classList.toggle('hidden', !show);
-        
-        window.resetBookingForm = () => {
-            document.getElementById('regForm').reset();
-            document.getElementById('booking-form-container').classList.remove('hidden');
-            document.getElementById('ticket-view').classList.add('hidden');
-            setupDateRestrictions();
-        };
-
-        function showToast(m, isError = false) {
-            const t = document.getElementById('toast');
-            t.innerText = m;
-            t.style.backgroundColor = isError ? "#dc2626" : "#0f172a";
-            t.classList.replace('opacity-0', 'opacity-100');
-            t.classList.add('translate-y-[-10px]');
-            setTimeout(() => {
-                t.classList.replace('opacity-100', 'opacity-0');
-                t.classList.remove('translate-y-[-10px]');
-            }, 3000);
-        }
-
-        init();
-    </script>
+</script>
 </body>
 </html>
