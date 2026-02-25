@@ -3,216 +3,270 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Digaryu Traditional Medicine Clinic - Queue System (Cloud)</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>Clinic Queue Management</title>
+    <link href="https://fonts.googleapis.com/css2?family=Pyidaungsu&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Pyidaungsu:wght@400;700&display=swap');
-        body {
-            font-family: 'Pyidaungsu', sans-serif;
-            background-color: #f0f7f4;
-        }
-        .tab-active { color: white; background-color: #047857; border-radius: 0.75rem; }
-        .loading-overlay {
-            position: fixed; inset: 0; background: rgba(255, 255, 255, 0.9);
-            display: flex; align-items: center; justify-content: center; z-index: 1000;
-        }
-        .hidden { display: none !important; }
+        :root { --main-green: #28a745; --dark-green: #1e7e34; --light-green: #e9f5ec; }
+        body { font-family: 'Pyidaungsu', sans-serif; background-color: #f8f9fa; margin: 0; }
+        .header { background: var(--main-green); color: white; padding: 1rem; text-align: center; }
+        .nav-tabs { display: flex; cursor: pointer; background: #fff; border-bottom: 2px solid var(--main-green); }
+        .tab { flex: 1; padding: 1rem; text-align: center; font-weight: bold; }
+        .tab.active { background: var(--main-green); color: white; }
+        .container { padding: 20px; max-width: 1000px; margin: auto; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        input, select, textarea { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        button { background: var(--main-green); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; width: 100%; font-size: 16px; }
+        button:hover { background: var(--dark-green); }
+        .grid-dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .stat-box { padding: 20px; text-align: center; border-radius: 8px; color: white; }
+        .bg-booking { background: #17a2b8; } .bg-waiting { background: #ffc107; } .bg-calling { background: #28a745; } .bg-done { background: #6c757d; }
+        .list-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding: 10px 0; }
+        .btn-group { display: flex; gap: 5px; }
+        .btn-small { padding: 5px 10px; font-size: 12px; width: auto; }
+        .hidden { display: none; }
+        #logo-preview { max-width: 100px; height: auto; display: block; margin: 10px 0; }
+        @media (max-width: 600px) { .grid-dashboard { grid-template-columns: 1fr 1fr; } }
     </style>
 </head>
-<body class="text-slate-800">
+<body>
 
-    <div id="loadingScreen" class="loading-overlay">
-        <div class="text-center">
-            <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-emerald-700 mx-auto mb-4"></div>
-            <p class="text-emerald-800 font-bold">Cloud စနစ်သို့ ချိတ်ဆက်နေသည်...</p>
+<div class="header">
+    <img id="display-logo" src="" style="height: 50px; display: none;">
+    <h2 id="clinic-name-display">ဆေးခန်းအမည်</h2>
+</div>
+
+<div class="nav-tabs">
+    <div class="tab active" onclick="showTab('patient')">Patient Booking</div>
+    <div class="tab" onclick="showTab('admin')">Admin Tab</div>
+</div>
+
+<div id="patient-tab" class="container">
+    <div class="card">
+        <h3>လူနာဘိုကင်တင်ရန်</h3>
+        <input type="text" id="p-name" placeholder="လူနာအမည် (မဖြစ်မနေ)" required>
+        <input type="tel" id="p-phone" placeholder="ဖုန်းနံပါတ် (မထည့်လဲရပါသည်)">
+        <input type="date" id="p-date">
+        <button onclick="submitBooking()">ဘိုကင်ရယူမည်</button>
+        <p style="color: #666; margin-top: 15px; font-size: 14px;">
+            <i class="fas fa-info-circle"></i> အဆင်မပြေမှုရှိပါက 095072256 သို့ဆက်သွယ်နိုင်ပါသည်
+        </p>
+    </div>
+</div>
+
+<div id="admin-auth" class="container hidden">
+    <div class="card" style="max-width: 400px; margin: auto;">
+        <h3>Admin Login</h3>
+        <input type="password" id="admin-pass-input" placeholder="Password ရိုက်ထည့်ပါ">
+        <button onclick="checkAdmin()">Login</button>
+    </div>
+</div>
+
+<div id="admin-tab" class="container hidden">
+    <div class="grid-dashboard">
+        <div class="stat-box bg-booking"><h5>Booking Number</h5><div id="count-booking">-</div></div>
+        <div class="stat-box bg-waiting"><h5>Waiting</h5><div id="count-waiting">-</div></div>
+        <div class="stat-box bg-calling"><h5>Calling</h5><div id="count-calling">-</div></div>
+        <div class="stat-box bg-done"><h5>Completed</h5><div id="count-completed">-</div></div>
+    </div>
+
+    <div class="card">
+        <input type="date" id="filter-date" onchange="loadAdminData()">
+        <button onclick="toggleSection('admin-add-booking')" style="background: #666; margin-bottom: 10px;">လူနာအသစ်ထည့်ရန်</button>
+        <div id="admin-add-booking" class="hidden">
+             <input type="text" id="a-name" placeholder="လူနာအမည်">
+             <input type="tel" id="a-phone" placeholder="ဖုန်း">
+             <input type="date" id="a-date">
+             <button onclick="adminAddBooking()">Add Patient</button>
         </div>
     </div>
 
-    <!-- Navigation Header -->
-    <nav class="bg-white shadow-md sticky top-0 z-50">
-        <div class="container mx-auto px-4 flex h-16 items-center justify-between">
-            <div class="flex items-center gap-2 font-bold text-emerald-700">
-                <i class="fas fa-clinic-medical text-xl"></i>
-                <span class="hidden sm:inline">ဒိဂါယု</span>
-            </div>
-            <div class="flex gap-2 p-1 bg-slate-100 rounded-xl">
-                <button onclick="switchTab('booking')" id="btn-booking" class="px-6 py-2 text-sm font-bold tab-active">လူနာ Booking</button>
-                <button onclick="switchTab('admin')" id="btn-admin" class="px-6 py-2 text-sm font-bold text-slate-500">Admin Panel</button>
-            </div>
-        </div>
-    </nav>
-
-    <header class="bg-emerald-700 text-white p-6 md:p-10 shadow-lg text-center">
-        <h1 id="displayClinicName" class="text-2xl md:text-4xl font-bold mb-2">Digaryu Traditional Medicine Clinic</h1>
-        <p class="text-emerald-100 opacity-80 text-sm">Universal Cloud Sync System</p>
-    </header>
-
-    <main class="container mx-auto p-4 md:p-8 -mt-8">
-        
-        <!-- SECTION 1: PATIENT BOOKING -->
-        <section id="view-booking" class="max-w-xl mx-auto space-y-6">
-            <div id="booking-form-container" class="bg-white p-8 rounded-[2rem] shadow-2xl border border-emerald-50">
-                <div class="text-center mb-8">
-                    <div class="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-calendar-check text-4xl"></i>
-                    </div>
-                    <h2 class="text-2xl font-bold text-slate-700">ဘိုကင်ရယူရန်</h2>
-                </div>
-                
-                <form id="regForm" class="space-y-5">
-                    <div class="relative">
-                        <i class="fas fa-user absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500"></i>
-                        <input type="text" id="patientName" required class="w-full pl-12 pr-4 py-4 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-emerald-500 focus:bg-white outline-none transition-all" placeholder="လူနာအမည်">
-                    </div>
-                    <div class="relative">
-                        <i class="fas fa-phone absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500"></i>
-                        <input type="tel" id="patientPhone" class="w-full pl-12 pr-4 py-4 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-emerald-500 focus:bg-white outline-none transition-all" placeholder="ဖုန်းနံပါတ်">
-                    </div>
-                    <div class="relative">
-                        <i class="fas fa-calendar-day absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500"></i>
-                        <input type="date" id="bookingDate" required class="w-full pl-12 pr-4 py-4 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-emerald-500 focus:bg-white outline-none transition-all">
-                        <p class="text-[10px] text-slate-400 mt-1 ml-2">* ယနေ့မှစ၍ တစ်ပတ်အတွင်းသာ ယူနိုင်ပါသည်</p>
-                    </div>
-                    <button type="submit" id="submitBtn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl font-bold text-lg shadow-lg transition-all active:scale-95">
-                        စာရင်းသွင်းမည်
-                    </button>
-                </form>
-            </div>
-
-            <div id="ticket-view" class="hidden">
-                <div class="bg-slate-900 text-white p-10 rounded-[2.5rem] text-center shadow-2xl relative overflow-hidden">
-                    <div class="absolute top-0 left-0 w-full h-2 bg-emerald-500"></div>
-                    <p class="text-emerald-400 text-xs font-bold uppercase mb-6 tracking-widest">Booking အောင်မြင်ပါသည်</p>
-                    <h3 id="ticketNo" class="text-8xl font-black mb-4">#00</h3>
-                    <p id="ticketInfo" class="text-emerald-300 font-bold mb-8"></p>
-                    <button onclick="resetBookingForm()" class="bg-emerald-600 w-full py-4 rounded-xl font-bold">နောက်ထပ် ဘိုကင်ယူရန်</button>
-                </div>
-            </div>
-        </section>
-
-        <!-- SECTION 2: ADMIN PANEL -->
-        <section id="view-admin" class="hidden space-y-6">
-            <div id="admin-auth" class="bg-white p-8 rounded-3xl shadow-xl max-w-sm mx-auto text-center border">
-                <h2 class="font-bold text-xl mb-6">Admin Login</h2>
-                <input type="password" id="adminKey" class="w-full p-4 bg-slate-50 rounded-2xl mb-4 text-center outline-none border-2 border-transparent focus:border-emerald-500" placeholder="စကားဝှက်">
-                <button onclick="loginAdmin()" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold">ဝင်ရောက်မည်</button>
-            </div>
-
-            <div id="admin-content" class="hidden space-y-6">
-                <div class="flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm border">
-                    <div class="flex items-center gap-2">
-                        <span class="text-xs font-bold text-slate-400 uppercase">စာရင်းကြည့်ရန်ရက်:</span>
-                        <input type="date" id="filterDate" class="bg-emerald-50 px-4 py-2 rounded-xl outline-none font-bold text-emerald-800">
-                    </div>
-                    <div class="flex gap-2">
-                        <button onclick="toggleSettingsModal(true)" class="bg-slate-100 p-3 rounded-xl text-slate-600"><i class="fas fa-cog"></i></button>
-                        <button onclick="logoutAdmin()" class="bg-red-50 p-3 rounded-xl text-red-600"><i class="fas fa-sign-out-alt"></i></button>
-                    </div>
-                </div>
-
-                <!-- Stats Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-blue-500">
-                        <p class="text-gray-400 text-xs font-bold uppercase">စုစုပေါင်း</p>
-                        <h4 id="statTotal" class="text-3xl font-bold">0</h4>
-                    </div>
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-amber-500">
-                        <p class="text-gray-400 text-xs font-bold uppercase">စောင့်ဆိုင်း</p>
-                        <h4 id="statWait" class="text-3xl font-bold text-amber-600">0</h4>
-                    </div>
-                    <div class="bg-emerald-600 p-6 rounded-2xl shadow-xl text-white">
-                        <p class="text-emerald-200 text-xs font-bold uppercase">ခေါ်ဆိုဆဲ</p>
-                        <h4 id="statCall" class="text-3xl font-bold">#--</h4>
-                    </div>
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-slate-300">
-                        <p class="text-gray-400 text-xs font-bold uppercase">ပြီးစီး</p>
-                        <h4 id="statDone" class="text-3xl font-bold">0</h4>
-                    </div>
-                </div>
-
-                <!-- Patient List Table -->
-                <div class="bg-white rounded-[2rem] shadow-sm border overflow-hidden">
-                    <div class="p-6 border-b border-slate-50 flex justify-between items-center">
-                        <h3 class="font-bold text-lg">လူနာစာရင်း</h3>
-                        <span id="currentFilterLabel" class="text-xs bg-slate-100 px-3 py-1 rounded-full font-bold text-slate-500"></span>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left">
-                            <thead class="bg-slate-50 text-slate-400 text-xs font-bold uppercase">
-                                <tr>
-                                    <th class="p-6">Queue</th>
-                                    <th class="p-6">အမည်</th>
-                                    <th class="p-6">ဖုန်း</th>
-                                    <th class="p-6 text-right">လုပ်ဆောင်ချက်</th>
-                                </tr>
-                            </thead>
-                            <tbody id="patientTable" class="divide-y divide-slate-100">
-                                <!-- Data will be injected here -->
-                            </tbody>
-                        </table>
-                    </div>
-                    <div id="emptyMsg" class="p-20 text-center text-slate-300 hidden">
-                        <i class="fas fa-folder-open text-4xl mb-4 block"></i>
-                        ဒေတာမရှိသေးပါ။
-                    </div>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <!-- Settings Modal -->
-    <div id="settingsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[150] flex items-center justify-center p-4 hidden">
-        <div class="bg-white w-full max-w-md rounded-[2.5rem] p-8">
-            <h3 class="font-bold text-xl mb-6">ဆေးခန်းအမည် ပြင်ဆင်ရန်</h3>
-            <input type="text" id="inputClinicName" class="w-full p-4 bg-slate-100 rounded-2xl mb-6 outline-none border-2 border-transparent focus:border-emerald-500">
-            <button onclick="saveClinicSettings()" id="btnSaveSettings" class="w-full bg-emerald-600 text-white py-4 rounded-2xl font-bold">သိမ်းဆည်းမည်</button>
-            <button onclick="toggleSettingsModal(false)" class="w-full mt-2 text-slate-400 text-sm">ပယ်ဖျက်မည်</button>
-        </div>
+    <div class="card">
+        <h3>Patient List</h3>
+        <div id="patient-list">Loading...</div>
     </div>
 
-    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white px-6 py-3 rounded-xl shadow-2xl opacity-0 transition-all z-[200] pointer-events-none font-bold"></div>
-<script type="module">
- <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white px-6 py-3 rounded-xl shadow-2xl opacity-0 transition-all z-[200] pointer-events-none font-bold"></div>
+    <div class="card">
+        <h3>Clinic Settings</h3>
+        <input type="text" id="set-clinic-name" placeholder="ဆေးခန်းအမည် ပြင်ရန်">
+        <input type="file" id="set-logo" accept="image/*" onchange="handleLogo(event)">
+        <img id="logo-preview">
+        <input type="password" id="set-new-pass" placeholder="Password အသစ်">
+        <button onclick="saveSettings()">Save Settings</button>
+    </div>
+</div>
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-  import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+<script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyCv7Ur--zmS4r49BELdxw9YAoVsrDOdsI",
-    authDomain: "digaryu-29662.firebaseapp.com",
-    projectId: "digaryu-29662",
-    storageBucket: "digaryu-29662.appspot.com",
-    messagingSenderId: "720213822996",
-    appId: "1:720213822996:web:1161f95fec68632a21801"
-  };
+<script>
+    // --- Firebase Configuration ---
+    const firebaseConfig = {
+  apiKey: "AIzaSyCv7Ur--zmS24r49BELdxw9YAoVsrDOdsI",
+  authDomain: "digaryu-29662.firebaseapp.com",
+  databaseURL: "https://digaryu-29662-default-rtdb.firebaseio.com",
+  projectId: "digaryu-29662",
+  storageBucket: "digaryu-29662.firebasestorage.app",
+  messagingSenderId: "720213822996",
+  appId: "1:720213822996:web:1161f95fec068632aa2101",
+  measurementId: "G-S7C3Q3EFQ2"
+};
+    firebase.initializeApp(firebaseConfig);
+    // Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+    // --- Initial Logic ---
+    let currentAdminPass = "1234"; // Default Password
+    
+    // Date Picker Restriction (Today to +7 days)
+    const today = new Date().toISOString().split('T')[0];
+    const nextWeek = new Date();
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    const maxDate = nextWeek.toISOString().split('T')[0];
+    document.getElementById('p-date').setAttribute('min', today);
+    document.getElementById('p-date').setAttribute('max', maxDate);
+    document.getElementById('p-date').value = today;
+    document.getElementById('filter-date').value = today;
 
-  let app;
-  let db;
-
-  try {
-    app = initializeApp(firebaseConfig);
-    db = getFirestore(app);
-    console.log("Firebase connected successfully!");
-
-
-    const loading = document.querySelector('.loading');
-    if (loading) {
-      loading.style.display = 'none';
-    } else {
-      console.log("No .loading element found - skipping hide");
+    // --- Tab Switching ---
+    function showTab(tab) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        if(tab === 'patient') {
+            document.getElementById('patient-tab').classList.remove('hidden');
+            document.getElementById('admin-tab').classList.add('hidden');
+            document.getElementById('admin-auth').classList.add('hidden');
+            document.querySelectorAll('.tab')[0].classList.add('active');
+        } else {
+            document.getElementById('patient-tab').classList.add('hidden');
+            document.getElementById('admin-auth').classList.remove('hidden');
+            document.querySelectorAll('.tab')[1].classList.add('active');
+        }
     }
 
-  } catch (error) {
-    console.error("Firebase connection failed:", error);
-    const loading = document.querySelector('.loading');
-    if (loading) {
-      loading.innerHTML = "Cloud ချိတ်ဆက်မရပါ။ နောက်မှ ထပ်ကြည့်ပါ။";
+    function checkAdmin() {
+        if(document.getElementById('admin-pass-input').value === currentAdminPass) {
+            document.getElementById('admin-auth').classList.add('hidden');
+            document.getElementById('admin-tab').classList.remove('hidden');
+            loadAdminData();
+        } else { alert("စကားဝှက် မှားယွင်းနေပါသည်။"); }
     }
-  }
-  // }
 
+    // --- Booking Logic ---
+    function submitBooking() {
+        const name = document.getElementById('p-name').value;
+        const phone = document.getElementById('p-phone').value || "မပါရှိ";
+        const date = document.getElementById('p-date').value;
+
+        if(!name) return alert("အမည်ထည့်ပါ။");
+
+        const bookingRef = db.ref('bookings').push();
+        bookingRef.set({
+            bookingNo: Math.floor(1000 + Math.random() * 9000),
+            name, phone, date,
+            status: 'booking', // booking, waiting, calling, completed
+            timestamp: Date.now(),
+            note: ""
+        }).then(() => {
+            alert("ဘိုကင်တင်ခြင်း အောင်မြင်ပါသည်။");
+            document.getElementById('p-name').value = "";
+        });
+    }
+
+    // --- Admin Functions ---
+    function loadAdminData() {
+        const filterDate = document.getElementById('filter-date').value;
+        db.ref('bookings').orderByChild('date').equalTo(filterDate).on('value', (snapshot) => {
+            const data = snapshot.val();
+            renderList(data);
+        });
+    }
+
+    function renderList(data) {
+        const listDiv = document.getElementById('patient-list');
+        listDiv.innerHTML = "";
+        let counts = { booking: [], waiting: [], calling: [], completed: [] };
+
+        if(!data) { listDiv.innerHTML = "ယနေ့အတွက် လူနာမရှိသေးပါ။"; return; }
+
+        Object.keys(data).forEach(key => {
+            const p = data[key];
+            counts[p.status].push(p.bookingNo);
+
+            const item = document.createElement('div');
+            item.className = 'list-item';
+            item.innerHTML = `
+                <div>
+                    <strong>#${p.bookingNo} - ${p.name}</strong> (${p.phone})<br>
+                    <small>Status: ${p.status}</small><br>
+                    <input type="text" placeholder="မှတ်ချက်..." value="${p.note}" onchange="updateNote('${key}', this.value)" style="width:150px; font-size:12px;">
+                </div>
+                <div class="btn-group">
+                    <button class="btn-small" onclick="updateStatus('${key}', 'waiting')" style="background:#ffc107">Waiting</button>
+                    <button class="btn-small" onclick="updateStatus('${key}', 'calling')" style="background:#28a745">Call</button>
+                    <button class="btn-small" onclick="updateStatus('${key}', 'completed')" style="background:#6c757d">Done</button>
+                    <button class="btn-small" onclick="deletePatient('${key}')" style="background:red"><i class="fas fa-trash"></i></button>
+                </div>
+            `;
+            listDiv.appendChild(item);
+        });
+
+        document.getElementById('count-booking').innerText = counts.booking.join(', ') || "မရှိ";
+        document.getElementById('count-waiting').innerText = counts.waiting.join(', ') || "မရှိ";
+        document.getElementById('count-calling').innerText = counts.calling.join(', ') || "မရှိ";
+        document.getElementById('count-completed').innerText = counts.completed.join(', ') || "မရှိ";
+    }
+
+    function updateStatus(key, status) {
+        db.ref('bookings/' + key).update({ status: status, updatedAt: Date.now() });
+    }
+
+    function updateNote(key, note) {
+        db.ref('bookings/' + key).update({ note: note });
+    }
+
+    function deletePatient(key) {
+        if(confirm("ဖျက်မှာ သေချာပါသလား?")) db.ref('bookings/' + key).remove();
+    }
+
+    // --- Image Processing (Logo Resize) ---
+    function handleLogo(event) {
+        const file = event.target.files[0];
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 200;
+                const scaleSize = MAX_WIDTH / img.width;
+                canvas.width = MAX_WIDTH;
+                canvas.height = img.height * scaleSize;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                document.getElementById('logo-preview').src = canvas.toDataURL();
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function saveSettings() {
+        const newName = document.getElementById('set-clinic-name').value;
+        const newLogo = document.getElementById('logo-preview').src;
+        const newPass = document.getElementById('set-new-pass').value;
+
+        if(newName) document.getElementById('clinic-name-display').innerText = newName;
+        if(newLogo) {
+            const logoEl = document.getElementById('display-logo');
+            logoEl.src = newLogo;
+            logoEl.style.display = 'inline-block';
+        }
+        if(newPass) currentAdminPass = newPass;
+        alert("Settings သိမ်းဆည်းပြီးပါပြီ။");
+    }
+
+    function toggleSection(id) {
+        document.getElementById(id).classList.toggle('hidden');
+    }
 </script>
 </body>
 </html>
